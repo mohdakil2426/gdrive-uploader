@@ -388,12 +388,13 @@ class DriveService:
                 print()  # New line after progress
                 return filepath
 
-            except Exception as e:
+            except requests.RequestException:
                 if attempt < Config.MAX_RETRIES - 1:
                     print(f"   ⚠️ Attempt {attempt+1} failed. Retrying...")
                     time.sleep(Config.RETRY_DELAY * (attempt + 1))
                 else:
                     raise
+        return None
 
     def _download_ytdlp(self, url, save_dir, format_spec='best'):
         """Download using yt-dlp."""
