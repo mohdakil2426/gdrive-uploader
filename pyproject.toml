@@ -1,0 +1,38 @@
+[project]
+name = "gdrive-uploader"
+version = "1.0.0"
+description = "Google Drive Upload Queue Manager"
+requires-python = ">=3.9"
+
+[tool.pylint.main]
+ignore-patterns = ["test_.*\\.py"]
+
+[tool.pylint."messages control"]
+disable = [
+    "C0114",  # missing-module-docstring
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+    "E1101",  # no-member (false positive for Google API)
+    "E0401",  # import-error (customtkinter may not be installed)
+    "R0801",  # duplicate-code
+    "R0902",  # too-many-instance-attributes
+    "R0903",  # too-few-public-methods
+    "R0913",  # too-many-arguments
+    "R0917",  # too-many-positional-arguments
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.pyrefly]
+ignore_missing_imports = true

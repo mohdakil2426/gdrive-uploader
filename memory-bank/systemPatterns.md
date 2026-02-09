@@ -1,93 +1,93 @@
 # System Patterns: Universal Google Drive Uploader
 
-## Architecture Overview
+## Architecture (v2.0 - Tunnel-Free)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    USER'S BROWSER                           │
-│                  (Google Colab Tab)                         │
-└─────────────────────┬───────────────────────────────────────┘
-                      │ Paste URL + Run
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│               GOOGLE COLAB RUNTIME                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ URL Resolver│→ │  Streamer   │→ │  Drive API Upload   │ │
-│  │  (yt-dlp)   │  │  (requests) │  │  (google-api-client)│ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                      │
-                      ▼ Direct server-to-server transfer
-┌─────────────────────────────────────────────────────────────┐
-│                   GOOGLE DRIVE                              │
-│                  (User's 2TB Storage)                       │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         YOUR PC                                  │
+│   ┌─────────────────┐         ┌─────────────────┐               │
+│   │   GUI App       │   OR    │   CLI Script    │               │
+│   │   gui/app.py    │         │   uploader.py   │               │
+│   └────────┬────────┘         └────────┬────────┘               │
+│            └───────────┬───────────────┘                         │
+│                        ▼                                         │
+│              Google Drive API (writes queue.json)                │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    GOOGLE DRIVE                                  │
+│   MyDrive/.uploader/                                            │
+│   ├── queue.json    ← URLs to download                          │
+│   └── status.json   ← Progress updates                          │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    GOOGLE COLAB                                  │
+│   notebooks/Worker.ipynb                                        │
+│   - Polls queue.json every 5 seconds                            │
+│   - Downloads via yt-dlp (1500+ sites) or requests              │
+│   - Saves directly to Google Drive                              │
+│   - Updates status.json with progress                           │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Key Design Patterns
+## Data Flow
 
-### 1. Streaming Pipeline
-- Never download entire file to memory/disk
-- Stream chunks directly: Source → RAM buffer → Drive API
-- Chunk size: 8-50MB for optimal performance
+1. **User adds URL** via GUI or CLI
+2. **Local app writes** to `queue.json` on Drive
+3. **Colab Worker polls** `queue.json` every 5 seconds
+4. **Worker downloads** file using yt-dlp or requests
+5. **Worker saves** file directly to Google Drive
+6. **Worker updates** `status.json` with progress
+7. **Local app reads** `status.json` for UI updates
 
-### 2. URL Resolution Strategy
-```
-Input URL
-    │
-    ▼
-┌─────────────────┐
-│ Is Direct Link? │──Yes──→ Use requests.get(stream=True)
-└────────┬────────┘
-         │ No
-         ▼
-┌─────────────────┐
-│  Try yt-dlp     │──Success──→ Extract direct stream URL
-└────────┬────────┘
-         │ Fail
-         ▼
-    Return Error
-```
+## File Formats
 
-### 3. Authentication Flow
-- Google Colab: Native `drive.mount()` - simplest
-- VM/Script: OAuth2 with refresh token from token.json
-
-## Component Relationships
-
-### Colab Notebook (Primary)
-```
-colab_uploader.ipynb
-├── Cell 1: Setup & Mount Drive
-├── Cell 2: URL Input Form
-├── Cell 3: Download Functions
-│   ├── direct_download()
-│   └── ytdlp_download()
-└── Cell 4: Execute Upload
+### queue.json
+```json
+{
+  "downloads": [
+    {
+      "id": "uuid",
+      "url": "https://...",
+      "folder": "Downloads",
+      "status": "pending",
+      "added_at": "2024-01-01T12:00:00"
+    }
+  ]
+}
 ```
 
-### VM Script (Secondary)
+### status.json
+```json
+{
+  "downloads": {
+    "uuid": {
+      "status": "downloading",
+      "percent": 45,
+      "speed": "5.2 MB/s",
+      "filename": "video.mp4"
+    }
+  }
+}
 ```
-gdrive_uploader.py
-├── Authentication (token.json)
-├── File Upload (MediaFileUpload)
-├── Folder Management
-└── CLI Interface
-```
 
-## Critical Implementation Details
+## Design Decisions
 
-### Chunk Size Selection
-- Colab to Drive: 8MB chunks (fast, stable)
-- External URL: Match server's preferred chunk size
-- Drive API: Must be multiple of 256KB
+| Decision | Rationale |
+|----------|-----------|
+| Drive as queue | No tunnel needed, persistent, both sides can access |
+| Polling (not push) | Simpler, Colab can't receive webhooks |
+| CustomTkinter | Modern look, dark theme built-in, cross-platform |
+| Single-file scripts | Easy to understand, no complex imports |
+| yt-dlp for videos | Supports 1500+ sites, active development |
 
-### Error Handling
-- Network timeout: Retry with exponential backoff
-- Auth expired: Auto-refresh token
-- File too large: Use resumable upload
+## Why Not Web UI?
 
-### Performance Optimizations
-- Google-to-Google transfers: ~100MB/s possible
-- Use `stream=True` in requests
-- Avoid intermediate disk writes
+| Issue | Impact |
+|-------|--------|
+| CORS | Browser blocks cross-origin requests |
+| Tunnel expiry | Pinggy 60-min sessions |
+| Complexity | Flask + tunnel + frontend code |

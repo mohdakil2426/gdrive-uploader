@@ -2,96 +2,94 @@
 
 ## Technology Stack
 
-### Primary Platform: Google Colab
-- Python 3.10+
-- Pre-installed: requests, google-auth
-- Native Drive mounting via `google.colab.drive`
+### Local Machine
+| Component | Technology |
+|-----------|------------|
+| GUI | CustomTkinter (Python) |
+| CLI | argparse (Python stdlib) |
+| API Client | google-api-python-client |
+| Auth | google-auth, google-auth-oauthlib |
+| Colors | colorama |
 
-### Secondary Platform: Google Cloud VM (Ubuntu)
-- Python 3.8+
-- OAuth2 authentication via token.json
+### Google Colab
+| Component | Technology |
+|-----------|------------|
+| Runtime | Python 3.10+ |
+| Video Downloads | yt-dlp |
+| Direct Downloads | requests |
+| Storage | Google Drive (mounted) |
+
+### Communication
+| Component | Technology |
+|-----------|------------|
+| Message Queue | Google Drive (.uploader/ folder) |
+| Protocol | Google Drive API v3 |
+| Format | JSON files |
 
 ## Dependencies
 
-### Colab (Pre-installed)
+### Local (pip install)
 ```
-google-colab (native)
+customtkinter>=5.0.0
+google-api-python-client>=2.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.0
+colorama>=0.4.0
+```
+
+### Colab (pre-installed or pip)
+```
+yt-dlp
 requests
-google-auth
 google-api-python-client
 ```
 
-### VM/Local (requirements.txt)
-```
-google-auth>=2.0.0
-google-auth-oauthlib>=1.0.0
-google-api-python-client>=2.0.0
-yt-dlp>=2024.0.0
-requests>=2.28.0
-```
+## Development Tools
 
-## API & Authentication
+| Tool | Purpose | Status |
+|------|---------|--------|
+| Pylint | Python linting | 10.00/10 |
+| Ruff | Fast Python linting | 0 errors |
+| Pyrefly | Type checking | False positives (ignore) |
 
-### Google Drive API v3
-- Scopes: `https://www.googleapis.com/auth/drive`
-- Endpoints used:
-  - `files.create` - Upload files
-  - `files.list` - List folders
-  - `about.get` - Check quota
+Configuration in `pyproject.toml`.
 
-### Authentication Methods
-1. **Colab**: `drive.mount('/content/drive')` - Browser OAuth popup
-2. **VM**: `Credentials.from_authorized_user_file('token.json')` - Pre-authorized
+## API Configuration
+
+### Google Cloud Console
+- Project: (user's project)
+- APIs enabled: Google Drive API
+- OAuth: Desktop application credentials
 
 ### Credential Files
-- `credentials.json` - OAuth client config (from Google Cloud Console)
-- `token.json` - User's access + refresh token (auto-generated)
+| File | Location | Purpose |
+|------|----------|---------|
+| credentials.json | Project root | OAuth client config |
+| token.json | Project root | User access token |
 
-## Development Setup
-
-### Local Development
-```bash
-cd GdriveUploader
-pip install -r requirements.txt
-python gdrive_uploader.py --help
+### Drive Folder Structure
+```
+MyDrive/
+├── .uploader/           # Hidden folder for queue
+│   ├── queue.json       # Download requests
+│   └── status.json      # Progress updates
+├── Downloads/           # Default download folder
+├── Videos/
+├── Music/
+└── ...
 ```
 
-### Colab Development
-1. Open `Universal_GDrive_Uploader.ipynb` in Colab
-2. Run cells in order
-3. Authenticate when prompted
+## Platform Support
 
-## Technical Constraints
+| Platform | GUI | CLI |
+|----------|-----|-----|
+| Windows | ✅ | ✅ |
+| macOS | ✅ | ✅ |
+| Linux | ✅ | ✅ |
 
-### Google Colab Limits
-- Session timeout: ~12 hours (free), 24 hours (Pro)
-- RAM: 12GB (free), 25GB (Pro)
-- Disk: 100GB temporary
+## Known Limitations
 
-### Google Drive API Limits
-- Upload: 750GB/day per user
-- API calls: 1,000,000,000/day (effectively unlimited)
-- File size: 5TB max
-
-### yt-dlp Considerations
-- Some sites have IP-bound URLs (must download from same IP that extracted)
-- Rate limiting on some platforms
-- Regular updates needed for site compatibility
-
-## Tool Usage Patterns
-
-### yt-dlp Integration
-```python
-import yt_dlp
-ydl_opts = {'format': 'best', 'quiet': True}
-with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-    info = ydl.extract_info(url, download=False)
-    direct_url = info['url']
-```
-
-### Streaming Upload
-```python
-response = requests.get(url, stream=True)
-for chunk in response.iter_content(chunk_size=8*1024*1024):
-    file.write(chunk)
-```
+1. **Pyrefly false positives**: Google API uses dynamic attributes
+2. **Colab timeout**: Free tier may disconnect after ~12 hours
+3. **Drive quota**: 15GB free, 2TB with Google One

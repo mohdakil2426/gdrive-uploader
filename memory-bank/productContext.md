@@ -3,43 +3,44 @@
 ## Why This Project Exists
 
 ### Problem Statement
-When you want to download a large file (video, software, backup) to Google Drive:
-- Traditional method: Download to PC → Upload to Drive (uses 2x bandwidth + local storage)
-- This wastes time, bandwidth, and requires local disk space
+When you want to download a large file to Google Drive:
+- Traditional: Download to PC → Upload to Drive (uses 2x bandwidth + local storage)
+- Web UI approach: CORS issues, tunnel session expiry, complexity
 
-### Solution
-Use Google's own infrastructure (Colab/VM) to transfer directly:
-- URL → Google Servers → Google Drive
-- Your PC only sends the URL command
-- All heavy lifting happens in Google's data centers
+### Solution (v2.0)
+Use Google Drive as a message queue:
+- Local app writes URL to Drive queue
+- Colab worker polls queue, downloads, saves to Drive
+- No tunnels, no CORS, no session limits
 
-## How It Should Work
+## How It Works
 
 ### User Experience Flow
-1. Open Google Colab notebook
-2. Paste the file URL
-3. Click "Run"
-4. File appears in Google Drive
+1. Run Python GUI or CLI
+2. Paste URL, select folder
+3. URL added to queue.json on Drive
+4. Colab worker picks up and downloads
+5. File appears in Google Drive
 
 ### Supported Sources
 - Direct download links (any file type)
 - Video platforms (YouTube, Twitter, Reddit, etc. via yt-dlp)
-- File hosting services (where possible)
+- 1500+ sites supported by yt-dlp
 - Any HTTP/HTTPS accessible URL
 
 ## User Experience Goals
 
 ### Simplicity
-- One notebook, minimal configuration
-- Copy-paste URL workflow
-- Clear progress feedback
+- GUI: Paste URL, click button
+- CLI: `python uploader.py "url"`
+- No tunnel URLs to copy/paste
 
 ### Reliability
-- Handle network interruptions
-- Resume failed uploads
-- Validate file integrity
+- Queue persists in Google Drive
+- Colab can restart without losing queue
+- No 60-minute session limits
 
-### Flexibility
-- Any file format
-- Custom destination folders
-- Batch URL processing
+### No Dependencies
+- No browser required (unlike Web UI)
+- No tunnel services
+- Just Python + Google API

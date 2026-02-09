@@ -1,26 +1,27 @@
 # Project Brief: Universal Google Drive Uploader
 
 ## Project Overview
-A universal file uploader that transfers files from any URL directly to Google Drive without using local bandwidth or storage. Designed to run on Google Colab (primary) or Google Cloud VM (secondary).
+A universal file uploader that transfers files from any URL directly to Google Drive without using local bandwidth or storage. Uses Google Drive as a message queue between local Python app and Google Colab worker.
 
 ## Core Requirements
 
 ### Primary Goal
 - Upload any file from any URL directly to Google Drive
 - Zero local network/storage usage (all transfers happen on Google's servers)
-- Support for all file types and formats
+- No tunnels or CORS issues
 
-### Target Platforms
-1. **Google Colab** (Primary) - Free, fast, no setup
-2. **Google Cloud VM** (Secondary) - For automation/scripting
+### Architecture (v2.0)
+```
+Local (GUI/CLI) → Google Drive Queue → Colab Worker → Google Drive Storage
+```
 
 ### Key Features
-- Direct URL → Google Drive streaming
-- Progress tracking with percentage and speed
-- Support for video sites via yt-dlp
+- Python GUI (CustomTkinter) for easy use
+- CLI for quick terminal access
+- Google Drive as message queue (no tunnel needed)
+- Support for 1500+ video sites via yt-dlp
+- Progress tracking via status.json
 - Folder organization in Drive
-- Resumable uploads for large files
-- Storage quota checking
 
 ## User Profile
 - Owner: Akila
@@ -28,8 +29,8 @@ A universal file uploader that transfers files from any URL directly to Google D
 - Use case: Transfer large files without consuming local bandwidth
 
 ## Success Criteria
-1. Paste any URL → File appears in Google Drive
+1. Add URL via GUI or CLI → File appears in Google Drive
 2. No local download required
-3. Works with direct links and video sites
-4. Shows upload progress
-5. Handles files of any size
+3. No tunnel or CORS issues
+4. Works with direct links and video sites
+5. Shows download progress
