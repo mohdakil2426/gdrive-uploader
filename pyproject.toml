@@ -1,38 +1,49 @@
 [project]
 name = "gdrive-uploader"
-version = "1.0.0"
-description = "Google Drive Upload Queue Manager"
-requires-python = ">=3.9"
+version = "2.0.0"
+description = "Universal Google Drive Uploader - Downloads files from URLs directly to Google Drive"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "A", "C4", "SIM", "ARG"]
+ignore = [
+    "E501",  # Line too long (handled by formatter)
+]
 
 [tool.pylint.main]
-ignore-patterns = ["test_.*\\.py"]
+ignore-patterns = ["notebooks/*"]
 
-[tool.pylint."messages control"]
+[tool.pylint.messages_control]
 disable = [
-    "C0114",  # missing-module-docstring
-    "C0115",  # missing-class-docstring
-    "C0116",  # missing-function-docstring
-    "E1101",  # no-member (false positive for Google API)
-    "E0401",  # import-error (customtkinter may not be installed)
-    "R0801",  # duplicate-code
-    "R0902",  # too-many-instance-attributes
-    "R0903",  # too-few-public-methods
-    "R0913",  # too-many-arguments
-    "R0917",  # too-many-positional-arguments
+    "no-member",  # Google API uses dynamic attributes (Resource.files())
+    "too-many-ancestors",  # GUI frameworks have deep inheritance
+    "too-many-instance-attributes",  # GUI apps need many attributes
+    "too-many-arguments",  # Some constructors need many args
+    "too-many-positional-arguments",  # Same as above
+    "duplicate-code",  # Single-file design intentionally duplicates some code
 ]
 
 [tool.pylint.format]
 max-line-length = 100
 
-[tool.ruff]
-line-length = 100
-target-version = "py39"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
-ignore = [
-    "E501",  # line too long (handled by formatter)
-]
+[tool.pylint.design]
+max-args = 10
+max-attributes = 15
 
 [tool.pyrefly]
-ignore_missing_imports = true
+ignore_errors_in_generated_code = true
+
+# Paths to exclude from type checking
+exclude = [
+    "notebooks/",  # Colab notebooks use google.colab which isn't available locally
+]
+
+# Known missing modules that are environment-specific
+ignore_missing_imports = [
+    "google.colab",
+    "yt_dlp",
+]
