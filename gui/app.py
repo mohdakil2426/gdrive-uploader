@@ -335,7 +335,7 @@ class DownloadManagerApp(ctk.CTk):
             font=("Arial", 12)
         )
         self.url_entry.grid(row=1, column=0, sticky="ew", padx=15, pady=(0, 15))
-        self.url_entry.bind("<Return>", lambda e: self._add_download())
+        self.url_entry.bind("<Return>", lambda _: self._add_download())
 
         # Folder and button frame
         control_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
@@ -500,14 +500,14 @@ class DownloadManagerApp(ctk.CTk):
 
                         # Show notification on completion
                         if (old_status != 'completed' and
-                                status_info.get('status') == 'completed'):
-                            if download_id not in self.completed_downloads:
-                                self.completed_downloads.add(download_id)
-                                filename = status_info.get('filename', 'Download')
-                                self.after(
-                                    0,
-                                    lambda f=filename: self._show_completion_notification(f)
-                                )
+                                status_info.get('status') == 'completed' and
+                                download_id not in self.completed_downloads):
+                            self.completed_downloads.add(download_id)
+                            filename = status_info.get('filename', 'Download')
+                            self.after(
+                                0,
+                                lambda f=filename: self._show_completion_notification(f)
+                            )
 
             except Exception as err:  # pylint: disable=broad-except
                 print(f"Polling error: {err}")

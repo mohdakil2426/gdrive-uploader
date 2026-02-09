@@ -1,6 +1,6 @@
 [project]
 name = "gdrive-uploader"
-version = "2.0.0"
+version = "2.1.0"
 description = "Universal Google Drive Uploader - Downloads files from URLs directly to Google Drive"
 requires-python = ">=3.10"
 
@@ -15,7 +15,7 @@ ignore = [
 ]
 
 [tool.pylint.main]
-ignore-patterns = ["notebooks/*"]
+# No exclusions - lint everything
 
 [tool.pylint.messages_control]
 disable = [
@@ -34,16 +34,26 @@ max-line-length = 100
 max-args = 10
 max-attributes = 15
 
-[tool.pyrefly]
-ignore_errors_in_generated_code = true
-
-# Paths to exclude from type checking
-exclude = [
-    "notebooks/",  # Colab notebooks use google.colab which isn't available locally
-]
-
-# Known missing modules that are environment-specific
-ignore_missing_imports = [
-    "google.colab",
-    "yt_dlp",
-]
+# =============================================================================
+# PYREFLY FALSE POSITIVES (Not real bugs)
+# =============================================================================
+# These errors are expected and can be ignored:
+#
+# 1. missing-attribute: self.service.files()
+#    - Google API Resource class uses dynamic attributes
+#    - Works correctly at runtime
+#
+# 2. missing-import: google.colab
+#    - Only available in Google Colab environment
+#    - Not installed locally (and shouldn't be)
+#
+# 3. bad-argument-type: yt_dlp.YoutubeDL(ydl_opts)
+#    - yt-dlp has complex type signatures
+#    - Works correctly at runtime
+#
+# 4. unbound-name: result
+#    - False positive - variable is always set in the loop
+#
+# 5. unsupported-operation: dict assignment
+#    - Type inference limitation with JSON data
+# =============================================================================
